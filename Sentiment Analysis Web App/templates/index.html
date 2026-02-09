@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis - Premium Insights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Sentiment Analysis</h1>
+            <p>Uncover the emotions behind the words using advanced AI.</p>
+        </header>
+
+        <section class="analysis-box card">
+            <form action="/analyze" method="POST">
+                <label for="rawtext">Enter your text below:</label>
+                <textarea name="rawtext" id="rawtext" placeholder="Start typing here..."
+                    required>{{ rawtext or '' }}</textarea>
+                <button type="submit" class="btn-primary">Analyze Sentiment</button>
+            </form>
+        </section>
+
+        {% if sentiment %}
+        <section class="results-section">
+            <div class="result-card card {{ sentiment_class }}">
+                <div class="result-header">
+                    <span class="label">Sentiment</span>
+                    <h2 class="sentiment-value">{{ sentiment }}</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Polarity</span>
+                        <div class="stat-bar-container">
+                            <div class="stat-bar" data-width="{{ polarity_width }}"></div>
+                        </div>
+                        <span class="stat-value">{{ polarity }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Subjectivity</span>
+                        <div class="stat-bar-container">
+                            <div class="stat-bar" data-width="{{ subjectivity_width }}"></div>
+                        </div>
+                        <span class="stat-value">{{ subjectivity }}</span>
+                    </div>
+                </div>
+                <p class="description">
+                    {% if sentiment == "Positive" %}
+                    The tone is optimistic and clear.
+                    {% elif sentiment == "Negative" %}
+                    The tone appears critical or somber.
+                    {% else %}
+                    The tone is balanced and factual.
+                    {% endif %}
+                </p>
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="chat-section card">
+            <header class="chat-header">
+                <h3>Chat with Gemini AI</h3>
+                <p>Real-time data enabled via Google Search</p>
+            </header>
+            <div id="chat-window" class="chat-window">
+                <div class="message assistant">Hello! I'm Gemini. I have access to real-time search. Ask me anything!
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Ask a question..." autocomplete="off">
+                <button id="send-btn" class="btn-primary">Send</button>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Sentiment Analysis AI. Premium Insights for Everyone.</p>
+        </footer>
+    </div>
+    <script>
+        document.querySelectorAll('.stat-bar').forEach(bar => {
+            bar.style.width = bar.dataset.width + '%';
+        });
+
+        // Chat logic
+        const chatWindow = document.getElementById('chat-window');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function appendMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            msgDiv.innerText = text;
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            appendMessage('user', message);
+            chatInput.value = '';
+
+            const loadingId = 'loading-' + Date.now();
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant loading';
+            loadingDiv.id = loadingId;
+            loadingDiv.innerText = 'Gemini is thinking...';
+            chatWindow.appendChild(loadingDiv);
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+
+                document.getElementById(loadingId).remove();
+                if (data.response) {
+                    appendMessage('assistant', data.response);
+                } else {
+                    appendMessage('assistant', 'Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                appendMessage('assistant', 'Network error.');
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+
+</html>

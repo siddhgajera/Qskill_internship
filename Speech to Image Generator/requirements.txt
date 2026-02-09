@@ -1,0 +1,3 @@
+monsterapi
+python-dotenv
+requests
